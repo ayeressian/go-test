@@ -63,5 +63,5 @@ func UpdateProduct(pu *Product) error {
 }
 
 func getNextId() int {
-	return len(productList)
+	return len(productList) + 1
 }

@@ -9,13 +9,22 @@ import (
 	"time"
 
 	"github.com/ayeressian/go-test2/test/test1/handlers"
+	"github.com/gorilla/mux"
 )
 
 func Test1() {
 	appLog := log.New(os.Stdout, "echo_server", log.LstdFlags)
 	h := handlers.NewProducts(appLog)
-	sm := http.NewServeMux()
-	sm.Handle("/", h)
+	
+	sm := mux.NewRouter()
+	getRouter := sm.Methods(http.MethodGet).Subrouter()
+	getRouter.HandleFunc("/", h.GetProducts)
+
+	putRouter := sm.Methods(http.MethodPut).Subrouter()
+	putRouter.HandleFunc("/{id:[0-9]+}", h.UpdateProduct)
+
+	postRouter := sm.Methods(http.MethodPost).Subrouter()
+	postRouter.HandleFunc("/", h.AddProduct)
 
 	server := &http.Server{
 		Addr: ":1234",

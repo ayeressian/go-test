@@ -3,10 +3,10 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
 
 	"github.com/ayeressian/go-test2/test/test1/data"
+	"github.com/gorilla/mux"
 )
 
 type ProductController struct {
@@ -17,20 +17,7 @@ func NewProducts(l *log.Logger) *ProductController {
 	return &ProductController{l: l}
 }
 
-func (products *ProductController) ServeHTTP(respWriter http.ResponseWriter, request *http.Request) {
-	switch request.Method {
-	case http.MethodGet:
-		products.getProducts(respWriter, request)
-	case http.MethodPost:
-		products.addProduct(respWriter, request)
-	case http.MethodPut:
-		products.updateProduct(respWriter, request)
-	default:
-		respWriter.WriteHeader(http.StatusMethodNotAllowed)
-	}
-}
-
-func (productController *ProductController) getProducts(respWriter http.ResponseWriter, request *http.Request) {
+func (productController *ProductController) GetProducts(respWriter http.ResponseWriter, request *http.Request) {
 	lp := data.GetProducts()
 	err := lp.ToJSON(respWriter)
 	if err != nil {
@@ -38,7 +25,7 @@ func (productController *ProductController) getProducts(respWriter http.Response
 	}
 }
 
-func (productController *ProductController) addProduct(respWriter http.ResponseWriter, request *http.Request) {
+func (productController *ProductController) AddProduct(respWriter http.ResponseWriter, request *http.Request) {
 	product := &data.Product{}
 	err := product.FromJSON(request.Body)
 	if err != nil {
@@ -48,18 +35,9 @@ func (productController *ProductController) addProduct(respWriter http.ResponseW
 	data.AddProduct(product)
 }
 
-func (productController *ProductController) updateProduct(respWriter http.ResponseWriter, request *http.Request) {
-	regex := regexp.MustCompile(`/([0-9]+)`)
-	g := regex.FindAllStringSubmatch(request.URL.Path, -1)
-
-	if len(g) != 1 && len(g[0]) != 1 {
-		http.Error(respWriter, "invalid URL", http.StatusBadRequest)
-		return
-	}
-
-	idString := g[0][1]
-	id, _ := strconv.Atoi(idString)
-
+func (productController *ProductController) UpdateProduct(respWriter http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	id, _ := strconv.Atoi(vars["id"])
 	p := &data.Product{ID: id}
 
 	p.FromJSON(request.Body)
