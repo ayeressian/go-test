@@ -15,19 +15,21 @@ import (
 func Test1() {
 	appLog := log.New(os.Stdout, "echo_server", log.LstdFlags)
 	h := handlers.NewProducts(appLog)
-	
+
 	sm := mux.NewRouter()
 	getRouter := sm.Methods(http.MethodGet).Subrouter()
 	getRouter.HandleFunc("/", h.GetProducts)
 
 	putRouter := sm.Methods(http.MethodPut).Subrouter()
 	putRouter.HandleFunc("/{id:[0-9]+}", h.UpdateProduct)
+	putRouter.Use(h.MidProductValid)
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
 	postRouter.HandleFunc("/", h.AddProduct)
+	postRouter.Use(h.MidProductValid)
 
 	server := &http.Server{
-		Addr: ":1234",
+		Addr:    ":1234",
 		Handler: sm,
 	}
 
@@ -42,9 +44,9 @@ func Test1() {
 	signal.Notify(sigChan, os.Interrupt)
 	signal.Notify(sigChan, os.Kill)
 
-	sig := <- sigChan
+	sig := <-sigChan
 	appLog.Printf("Gracefully closing %v", sig)
 
-	tc, _ := context.WithTimeout(context.Background(), 30 * time.Second)
+	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	server.Shutdown(tc)
 }

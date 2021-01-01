@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"strconv"
@@ -26,25 +27,39 @@ func (productController *ProductController) GetProducts(respWriter http.Response
 }
 
 func (productController *ProductController) AddProduct(respWriter http.ResponseWriter, request *http.Request) {
-	product := &data.Product{}
-	err := product.FromJSON(request.Body)
-	if err != nil {
-		http.Error(respWriter, "Incorrect product format", http.StatusBadRequest)
-		return
-	}
+	product := request.Context().Value(KeyProduct{}).(*data.Product)
 	data.AddProduct(product)
 }
 
 func (productController *ProductController) UpdateProduct(respWriter http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	id, _ := strconv.Atoi(vars["id"])
-	p := &data.Product{ID: id}
 
-	p.FromJSON(request.Body)
+	product := request.Context().Value(KeyProduct{}).(*data.Product)
 
-	err := data.UpdateProduct(p)
+	product.ID = id
+
+	err := data.UpdateProduct(product)
 
 	if err == data.NotFoundError {
 		http.Error(respWriter, "Product with the given ID doesn't exist", http.StatusNotFound)
 	}
+}
+
+type KeyProduct struct {}
+
+func (productController *ProductController) MidProductValid(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(respWriter http.ResponseWriter, request *http.Request) {
+		product := &data.Product{}
+		err := product.FromJSON(request.Body)
+		if err != nil {
+			http.Error(respWriter, "Incorrect product format", http.StatusBadRequest)
+			return
+		}
+
+		ctx := context.WithValue(request.Context(), KeyProduct{}, product)
+		request = request.WithContext(ctx)
+
+		next.ServeHTTP(respWriter, request)
+	})
 }
