@@ -2,7 +2,7 @@ package test2
 
 import "fmt"
 
-func Test2() {
+func Main() {
 	ch := make(chan int)
 	go func() {
 		// close(ch)

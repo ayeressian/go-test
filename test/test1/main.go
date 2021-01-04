@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Test1() {
+func Main() {
 	appLog := log.New(os.Stdout, "echo_server", log.LstdFlags)
 	h := handlers.NewProducts(appLog)
 
